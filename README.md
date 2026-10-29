@@ -1,6 +1,6 @@
 # opencode-glance
 
-[中文](./README.md) · English
+[中文](./README.zh.md) · English
 
 A glanceable status bar for OpenCode v2, in both the terminal and Desktop:
 
@@ -20,7 +20,13 @@ One package ships a **GUI** and a **TUI** part with the same metrics:
 
 ## Install
 
-From npm (after publishing):
+From npm:
+
+```bash
+opencode plugin add opencode-glance
+```
+
+Or add it to the global config directly:
 
 ```jsonc
 // ~/.config/opencode/opencode.jsonc

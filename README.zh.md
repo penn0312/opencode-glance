@@ -1,6 +1,6 @@
 # opencode-glance
 
-中文 · [English](./README.en.md)
+中文 · [English](./README.md)
 
 一个 OpenCode v2 插件，用一条胶囊状态条展示当前会话的关键指标：
 
