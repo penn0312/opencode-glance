@@ -2,11 +2,10 @@ import { Command, Plugin, Slot, Style } from "@opencode/plugin/gui"
 import { createSignal } from "solid-js"
 import { GlanceBar } from "./gui/glance"
 import { css } from "./gui/styles"
-import en from "./i18n/en"
-import zh from "./i18n/zh"
+import { messages } from "./i18n"
 
 export default Plugin.define({
-  i18n: { en, zh },
+  i18n: messages,
   setup(ctx) {
     const [visible, setVisible] = createSignal(ctx.options.show !== false)
 

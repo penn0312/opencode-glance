@@ -160,7 +160,9 @@ export function GlanceBar(props: { ctx: Context }) {
     return latestRate() ?? averageRate()
   })
 
-  const turnsText = createMemo(() => ctx.t("glance.turns", { turns: turns(), steps: steps() }))
+  const turnsText = createMemo(
+    () => `${ctx.plural("glance.turn", turns())} ${ctx.plural("glance.step", steps())}`,
+  )
   const tokensText = createMemo(() => ctx.t("glance.tokens", { tokens: compactNumber(totalTokens(totals())) }))
   const cacheText = createMemo(() => {
     const value = hit()

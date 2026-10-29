@@ -19,44 +19,9 @@ import {
   totalTokens,
 } from "./shared/metrics"
 
-type Locale = "zh" | "en"
+import { plural, resolveLocale, translate, type Locale, type MessageKey, type Params } from "./i18n"
+
 type RateMode = "auto" | "average" | "last"
-
-const COPY = {
-  zh: {
-    turns: (turns: number, steps: number) => `${turns} 轮 ${steps} 步`,
-    rate: (rate: number) => `${rate} tok/s`,
-    rateElapsed: (rate: number, elapsed: string) => `${rate} tok/s · ${elapsed}`,
-    live: (rate: number, elapsed: string) => `~${rate} tok/s · ${elapsed}`,
-    tokens: (tokens: string) => `${tokens} tok`,
-    cache: (percent: number) => `缓存命中 ${percent}%`,
-    context: (percent: number) => `${percent}%`,
-    tool: (name: string, elapsed: string) => `${name} ${elapsed}`,
-    waiting: (elapsed: string) => `等待响应 ${elapsed}`,
-    streaming: (elapsed: string) => `生成中 ${elapsed}`,
-    preparing: () => "准备中",
-  },
-  en: {
-    turns: (turns: number, steps: number) => `${turns} turns ${steps} steps`,
-    rate: (rate: number) => `${rate} tok/s`,
-    rateElapsed: (rate: number, elapsed: string) => `${rate} tok/s · ${elapsed}`,
-    live: (rate: number, elapsed: string) => `~${rate} tok/s · ${elapsed}`,
-    tokens: (tokens: string) => `${tokens} tok`,
-    cache: (percent: number) => `cache hit ${percent}%`,
-    context: (percent: number) => `${percent}%`,
-    tool: (name: string, elapsed: string) => `${name} ${elapsed}`,
-    waiting: (elapsed: string) => `waiting ${elapsed}`,
-    streaming: (elapsed: string) => `generating ${elapsed}`,
-    preparing: () => "preparing",
-  },
-} as const
-
-function resolveLocale(value: unknown): Locale {
-  if (value === "en") return "en"
-  if (value === "auto")
-    return Intl.DateTimeFormat().resolvedOptions().locale.toLowerCase().startsWith("zh") ? "zh" : "en"
-  return "zh"
-}
 
 function resolveRate(value: unknown): RateMode {
   if (value === "average" || value === "last" || value === "auto") return value
@@ -77,7 +42,7 @@ function GlanceBar(props: {
   rate: RateMode
 }) {
   const theme = props.context.theme
-  const copy = COPY[props.locale]
+  const t = (key: MessageKey, params?: Params) => translate(props.locale, key, params)
   const [barWidth, setBarWidth] = createSignal(0)
   const [now, setNow] = createSignal(Date.now())
   const [live, setLive] = createSignal<number>()
@@ -140,31 +105,33 @@ function GlanceBar(props: {
     return latestRate() ?? averageRate()
   })
 
-  const turnText = createMemo(() => copy.turns(turns(), steps()))
-  const tokensText = createMemo(() => copy.tokens(compactNumber(totalTokens(totals()))))
+  const turnText = createMemo(
+    () => `${plural(props.locale, "glance.turn", turns())} ${plural(props.locale, "glance.step", steps())}`,
+  )
+  const tokensText = createMemo(() => t("glance.tokens", { tokens: compactNumber(totalTokens(totals())) }))
   const cacheText = createMemo(() => {
     const value = hit()
-    return value === undefined ? undefined : copy.cache(value)
+    return value === undefined ? undefined : t("glance.cache", { percent: value })
   })
   const contextText = createMemo(() => {
     const value = usage()?.percent
-    return value === undefined ? "—" : copy.context(value)
+    return value === undefined ? "—" : t("glance.context", { percent: value })
   })
 
   const activityText = createMemo(() => {
     const current = activity()
     if (!running()) {
       const value = speed()
-      return value === undefined ? undefined : copy.rate(value)
+      return value === undefined ? undefined : t("glance.rate", { rate: value })
     }
-    if (!current) return copy.preparing()
+    if (!current) return t("glance.preparing")
     if (current.kind === "tool")
-      return copy.tool(shortName(current.name), formatDuration(current.elapsed))
-    if (current.kind === "waiting") return copy.waiting(formatDuration(current.elapsed))
+      return t("glance.tool", { name: shortName(current.name), elapsed: formatDuration(current.elapsed) })
+    if (current.kind === "waiting") return t("glance.waiting", { elapsed: formatDuration(current.elapsed) })
     const elapsed = formatDuration(current.elapsed)
-    if (props.rate === "auto" && live() !== undefined) return copy.live(live()!, elapsed)
+    if (props.rate === "auto" && live() !== undefined) return t("glance.live", { rate: live()!, elapsed })
     const exact = props.rate === "average" ? averageRate() : latestRate() ?? averageRate()
-    return exact === undefined ? copy.streaming(elapsed) : copy.rateElapsed(exact, elapsed)
+    return exact === undefined ? t("glance.streaming", { elapsed }) : t("glance.rateElapsed", { rate: exact, elapsed })
   })
 
   const progress = createMemo(() => (activityText() ? `${turnText()} · ${activityText()}` : turnText()))
@@ -258,7 +225,7 @@ export default Plugin.define({
       commands: [
         {
           id: "opencode-glance.toggle",
-          title: locale === "zh" ? "Glance：显示/隐藏状态条" : "Glance: toggle status bar",
+          title: translate(locale, "glance.command.toggle"),
           palette: true,
           run: () =>
             update((draft) => {

@@ -27,7 +27,7 @@ src/
 │  ├─ glance.tsx     # 状态条组件与响应式指标
 │  └─ styles.ts      # 注入的 CSS（使用 --v2-* 主题变量）
 ├─ shared/metrics.ts # 两端共用的纯计算
-└─ i18n/             # GUI 的英文 / 中文文案
+└─ i18n/             # 共用语言包（en / zh / zht / ja / ko / de / fr / es / pt / it）
 ```
 
 - TUI part 直接以 TSX 加载，改源码会热重载。
@@ -46,10 +46,18 @@ npm run dev        # vite build --watch，改 GUI 代码自动重载
 
 ## 安装
 
-`opencode.json(c)` 是 GUI 读取插件的地方；包里有 server part，所以 TUI part 也会随 server 加载。
+从 npm 安装（发布后）：
 
 ```jsonc
 // ~/.config/opencode/opencode.jsonc
+{
+  "plugins": ["opencode-glance"]
+}
+```
+
+也可以直接从 GitHub / 本地目录加载。`opencode.json(c)` 是 GUI 读取插件的地方；包里有 server part，所以 TUI part 也会随 server 加载。
+
+```jsonc
 {
   "plugins": [
     "file:///absolute/path/to/opencode-glance"
@@ -57,7 +65,7 @@ npm run dev        # vite build --watch，改 GUI 代码自动重载
 }
 ```
 
-需要配置选项时使用对象形式：
+需要给 GUI 配置选项时使用对象形式（TUI 选项要写在下面的 `cli.json` 里）：
 
 ```jsonc
 {
@@ -67,9 +75,7 @@ npm run dev        # vite build --watch，改 GUI 代码自动重载
       "options": {
         "show": true,
         "steps": "assistant",
-        "rate": "auto",
-        "icons": true,
-        "locale": "zh"
+        "rate": "auto"
       }
     }
   ]
@@ -78,23 +84,30 @@ npm run dev        # vite build --watch，改 GUI 代码自动重载
 
 ### TUI：去掉旧的 Context 块（可选）
 
-TUI 的内置 Context 块可以被配置禁用，这样状态条就是真正的替代品：
+TUI 的内置 Context 块可以被配置禁用，这样状态条就是真正的替代品。TUI 的插件选项必须写在 `cli.json` 里：通过 server 清单加载的 TUI part 不会携带 `options`。
 
 ```jsonc
 // ~/.config/opencode/cli.json
 {
   "plugins": [
+    {
+      "package": "opencode-glance",
+      "options": { "locale": "zh", "rate": "auto" }
+    },
     "-opencode.sidebar.context"
   ]
 }
 ```
 
-如果 TUI 连接的是远程 server，或希望它不依赖 server 的插件清单，也可以把本地包同时加进 `cli.json`：
+本地目录同样适用：
 
 ```jsonc
 {
   "plugins": [
-    "file:///absolute/path/to/opencode-glance",
+    {
+      "package": "file:///absolute/path/to/opencode-glance",
+      "options": { "locale": "zh", "rate": "auto" }
+    },
     "-opencode.sidebar.context"
   ]
 }
@@ -116,7 +129,15 @@ GUI 的内置 Context 指示器属于 app 内置插件，**第三方 GUI 插件�
 | `steps` | `"assistant"` | `"assistant"` 按 assistant 消息计步，`"tool"` 按工具调用计步 |
 | `rate` | `"auto"` | `"auto"` 运行中用流式文本估算实时速度（带 `~`），空闲显示最近一步真实速度；`"average"` 始终用全历史平均；`"last"` 始终用最近一步真实速度 |
 | `icons` | `true` | TUI 是否显示 `◷ ▤ ◔` 图标 |
-| `locale` | `"zh"` | TUI 文案；`"en"` 英文，`"auto"` 跟随系统语言。GUI 跟随 app 语言 |
+| `locale` | `"auto"` | TUI 文案：`"auto"` 跟随系统语言，也可指定 `zh`、`zht`、`en`、`ja`、`ko`、`de`、`fr`、`es`、`pt`、`it`。GUI 跟随 app 语言 |
+
+## 国际化
+
+- **GUI**：跟随 OpenCode Desktop / Web 的界面语言，由 `Plugin.define({ i18n: messages })` 提供。
+- **TUI**：默认 `locale: "auto"`，按系统语言匹配；也可在 `cli.json` 的 options 里指定。
+- 当前语言包：`en`、`zh`、`zht`、`ja`、`ko`、`de`、`fr`、`es`、`pt`、`it`。
+- 其他语言回退英文。新增语言只需要在 `src/i18n/index.ts` 加一份 `Catalog`，并加入 `locales`。
+- 轮/步使用了 `Intl.PluralRules`，英文、法文、德文等单复数形式正确。
 
 ## 指标细节
 
@@ -127,6 +148,20 @@ GUI 的内置 Context 指示器属于 app 内置插件，**第三方 GUI 插件�
 - 总 token 和缓存命中按 session family 汇总（根会话 + 已同步的子 agent），与内置 cost 的 family 口径一致。
 - 上下文百分比只取根会话最近一次有效 assistant step，且跳过已压缩内容和 undo 边界之后的消息，与内置 Context 面板一致。
 - 无数据时显示 `—`，不会出现 NaN。
+
+## 发布
+
+OpenCode 官方没有集中式插件市场，分发路径是：
+
+1. **npm**：`npm publish --access public`，用户用 `opencode plugin add opencode-glance`。
+2. **官方 Ecosystem 列表**：向 `anomalyco/opencode` 的 `packages/web/src/content/docs/ecosystem.mdx` 提交 PR。
+3. **社区列表**：`awesome-opencode`、`opencode.im` 等。
+
+`prepublishOnly` 会先跑 `typecheck` 和 GUI 构建。
+
+## 许可证
+
+MIT。见 [LICENSE](./LICENSE)。
 
 ## 注意
 

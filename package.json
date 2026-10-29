@@ -2,9 +2,28 @@
   "$schema": "https://json.schemastore.org/package.json",
   "name": "opencode-glance",
   "version": "0.1.0",
-  "private": true,
-  "description": "Glanceable session stats for OpenCode: turns, steps, throughput, total tokens, cache hit and context usage.",
+  "description": "Glanceable session stats for OpenCode: turns, steps, throughput, tokens, cache hit, context usage, and live tool activity.",
   "type": "module",
+  "license": "MIT",
+  "author": "Rosario Weynand",
+  "homepage": "https://github.com/penn0312/opencode-glance#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/penn0312/opencode-glance.git"
+  },
+  "bugs": {
+    "url": "https://github.com/penn0312/opencode-glance/issues"
+  },
+  "keywords": [
+    "opencode",
+    "opencode-plugin",
+    "statusline",
+    "tokens",
+    "cache",
+    "context",
+    "tui",
+    "desktop"
+  ],
   "exports": {
     ".": "./src/index.ts",
     "./tui": "./src/tui.tsx",
@@ -12,15 +31,26 @@
   },
   "files": [
     "src",
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "build": "vite build",
     "dev": "vite build --watch",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run typecheck && npm run build"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "dependencies": {
     "@opencode/plugin": "^2.2.0"
+  },
+  "peerDependencies": {
+    "@opentui/core": ">=0.7.0",
+    "@opentui/solid": ">=0.7.0",
+    "solid-js": ">=1.9.0"
   },
   "devDependencies": {
     "@opencode/client": "^2.2.0",
