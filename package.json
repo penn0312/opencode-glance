@@ -33,6 +33,7 @@
     "src",
     "dist",
     "README.md",
+    "README.en.md",
     "LICENSE"
   ],
   "scripts": {
