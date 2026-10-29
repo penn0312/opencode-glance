@@ -1,0 +1,15 @@
+export default {
+  "glance.turns": "{{turns}} 轮 {{steps}} 步",
+  "glance.rate": "{{rate}} tok/s",
+  "glance.rateElapsed": "{{rate}} tok/s · {{elapsed}}",
+  "glance.live": "~{{rate}} tok/s · {{elapsed}}",
+  "glance.tool": "{{name}} {{elapsed}}",
+  "glance.waiting": "等待响应 {{elapsed}}",
+  "glance.streaming": "生成中 {{elapsed}}",
+  "glance.preparing": "准备中",
+  "glance.tokens": "{{tokens}} tok",
+  "glance.cache": "缓存命中 {{percent}}%",
+  "glance.context": "{{percent}}%",
+  "glance.command.toggle": "Glance：显示/隐藏状态条",
+  "glance.command.group": "Glance",
+}

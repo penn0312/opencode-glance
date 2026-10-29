@@ -1,0 +1,15 @@
+export default {
+  "glance.turns": "{{turns}} turns {{steps}} steps",
+  "glance.rate": "{{rate}} tok/s",
+  "glance.rateElapsed": "{{rate}} tok/s · {{elapsed}}",
+  "glance.live": "~{{rate}} tok/s · {{elapsed}}",
+  "glance.tool": "{{name}} {{elapsed}}",
+  "glance.waiting": "waiting {{elapsed}}",
+  "glance.streaming": "generating {{elapsed}}",
+  "glance.preparing": "preparing",
+  "glance.tokens": "{{tokens}} tok",
+  "glance.cache": "cache hit {{percent}}%",
+  "glance.context": "{{percent}}%",
+  "glance.command.toggle": "Glance: toggle status bar",
+  "glance.command.group": "Glance",
+}
