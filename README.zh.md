@@ -26,9 +26,11 @@ src/
 ├─ tui.tsx           # TUI part：session.composer.top 上的圆角状态条
 ├─ gui.tsx           # GUI part：window.bottom 上的胶囊状态条
 ├─ gui/
-│  ├─ glance.tsx     # 状态条组件与响应式指标
+│  ├─ glance.tsx     # 状态条组件
 │  └─ styles.ts      # 注入的 CSS（使用 --v2-* 主题变量）
-├─ shared/metrics.ts # 两端共用的纯计算
+├─ shared/
+│  ├─ metrics.ts     # 两端共用的纯计算
+│  └─ glance.ts      # 两端共用的响应式聚合与文案
 └─ i18n/             # 共用语言包（en / zh / zht / ja / ko / de / fr / es / pt / it）
 ```
 
@@ -40,11 +42,12 @@ src/
 ```bash
 npm install
 npm run typecheck
+npm test           # 指标纯函数的单元测试
 npm run build      # 构建 GUI
 npm run dev        # vite build --watch，改 GUI 代码自动重载
 ```
 
-`dist/gui-experimental.cjs` 已提交到仓库，便于 clone 后直接以 `file://` 方式安装；修改 GUI 源码后记得重新 `npm run build` 并一起提交。
+`dist/gui-experimental.cjs` 已提交到仓库，便于 clone 后直接以 `file://` 方式安装；修改 GUI 源码后记得重新 `npm run build` 并一起提交。CI 会校验提交的 bundle 与重新构建的结果一致。
 
 ## 安装
 

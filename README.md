@@ -81,11 +81,12 @@ The GUI follows the OpenCode Desktop/Web language. The TUI uses the system langu
 ```bash
 npm install
 npm run typecheck
+npm test           # unit tests for the metric functions
 npm run build      # build the GUI bundle
 npm run dev        # vite build --watch
 ```
 
-`dist/gui-experimental.cjs` is committed so a clone works with `file://` without building. Rebuild it after changing GUI code.
+`dist/gui-experimental.cjs` is committed so a clone works with `file://` without building. Rebuild it after changing GUI code; CI fails when the committed bundle differs from a fresh build.
 
 ## Live speed
 
