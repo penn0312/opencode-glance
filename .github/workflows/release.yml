@@ -3,8 +3,8 @@ name: Release
 on:
   push:
     tags: ["v*"]
-  # After a failed publish (for example a missing secret) re-run the tag's workflow from the Actions tab,
-  # which is this dispatch entry, instead of deleting and re-pushing the tag.
+  # After a failed publish (for example a trusted publisher that is not configured yet) re-run the
+  # workflow from the Actions tab, which is this dispatch entry, instead of deleting and re-pushing the tag.
   workflow_dispatch:
 
 permissions:
@@ -21,6 +21,8 @@ jobs:
           node-version: 22
           registry-url: https://registry.npmjs.org
           cache: npm
+      # Trusted publishing needs npm 11.5.1 or later; Node 22 still ships npm 10.
+      - run: npm install --global npm@11
       - name: Check the tag matches the package version
         if: github.event_name == 'push'
         run: |
@@ -37,6 +39,17 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: git diff --exit-code -- dist
-      - run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # The first version is published by hand, so a tag for it is allowed to go up afterwards.
+      - name: Check whether this version is already on the registry
+        id: registry
+        run: |
+          version=$(node -p "require('./package.json').version")
+          if npm view "opencode-glance@$version" version >/dev/null 2>&1; then
+            echo "published=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::opencode-glance@$version already exists; skipping npm publish"
+          else
+            echo "published=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Publish
+        if: steps.registry.outputs.published != 'true'
+        run: npm publish --provenance --access public

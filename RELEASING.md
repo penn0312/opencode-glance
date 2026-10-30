@@ -1,48 +1,55 @@
 # Releasing
 
-Versions are published by the `Release` workflow when a `v*` tag is pushed. The workflow refuses to
-publish when the tag and `package.json` disagree, and it verifies the committed GUI bundle before it
-touches the registry.
+Versions are published by the `Release` workflow when a `v*` tag is pushed. The workflow refuses a tag
+that disagrees with `package.json`, verifies the committed GUI bundle, and skips a version that is
+already on the registry.
 
-## One-time bootstrap (only before the first npm release)
+It publishes with [trusted publishing](https://docs.npmjs.com/trusted-publishers): the runner exchanges
+its OIDC identity for a short-lived registry credential, so the repository stores no npm token. npm only
+allows configuring a trusted publisher for a package that already exists, which is why the first release
+is manual.
 
-npm does not let you configure trusted publishing for a package that does not exist yet, and the
-registry requires 2FA or a granular token with **bypass 2FA** for the first publish of any package.
-The first release therefore needs a token:
+## Bootstrap (only once, before the first npm release)
 
-1. Create a granular access token at npmjs.com → **Access Tokens** → **Generate New Token** with
-   **Read and write** and **Bypass 2FA** enabled. The flag is fixed at creation time.
-2. Store it for the workflow:
+1. Publish the first version from a local checkout:
 
    ```bash
-   gh secret set NPM_TOKEN
+   npm login
+   npm publish          # prepublishOnly runs typecheck, tests, and the GUI build
    ```
 
-3. Push the release tag (see below). `opencode-glance@0.1.1` and every later version can be published
-   by the workflow.
+2. Point npm at this repository as the package's trusted publisher:
 
-After the first version exists, the token can be replaced by OIDC trusted publishing:
+   ```bash
+   npm trust github opencode-glance \
+     --file release.yml \
+     --repository penn0312/opencode-glance \
+     --allow-publish
+   ```
 
-```bash
-npm trust github opencode-glance --file release.yml --repository penn0312/opencode-glance --allow-publish
-```
+3. Record the version on GitHub. The workflow sees the version on the registry and skips the publish,
+   so this is a no-op apart from the tag itself:
 
-Then delete the `NODE_AUTH_TOKEN` environment block from `.github/workflows/release.yml`, so npm uses
-the workflow's `id-token` instead of a stored secret.
+   ```bash
+   git tag v0.1.1
+   git push origin v0.1.1
+   ```
+
+Every later version is fully automatic.
 
 ## Every release
 
 ```bash
 npm version patch --no-git-tag-version   # or minor / major
 npm run typecheck && npm test && npm run build
-git commit -am "chore: release v0.1.1"   # use the version npm just wrote
-git tag v0.1.1
+git commit -am "chore: release v0.1.2"   # use the version npm just wrote
+git tag v0.1.2
 git push --follow-tags
 ```
 
 The tag push runs `Release`: it checks the tag against `package.json`, runs the tests, verifies that
-`dist/gui-experimental.cjs` matches a fresh build, and publishes with provenance. `CI` runs on the
-branch push as usual.
+`dist/gui-experimental.cjs` matches a fresh build, and publishes with provenance. `CI` runs on the branch
+push as usual.
 
 If the publish step fails, fix the cause and re-run the workflow from the Actions tab
 (`workflow_dispatch`) on the same commit. Do not delete and re-push the tag.
