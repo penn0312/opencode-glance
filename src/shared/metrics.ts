@@ -229,19 +229,34 @@ export function contextUsage(
   )
   return {
     tokens,
-    percent: model?.limit.context ? Math.round((tokens / model.limit.context) * 100) : undefined,
+    // Clamp like cacheHit: a model limit can be exceeded, but the bar should never read 103%.
+    percent: model?.limit.context
+      ? Math.max(0, Math.min(100, Math.round((tokens / model.limit.context) * 100)))
+      : undefined,
   }
 }
 
-/** 1_234 -> "1.2K", 16_200_000 -> "16.2M". Keeps the compact look of a glanceable status line. */
+/**
+ * 1_234 -> "1.2K", 16_200_000 -> "16.2M". Keeps the compact look of a glanceable status line.
+ * A value that rounds up to 1000 in its unit moves to the next one (999_999 -> "1M", not "1000K").
+ */
 export function compactNumber(value: number): string {
+  if (!Number.isFinite(value) || value < 0) return String(value)
   const units: ReadonlyArray<readonly [number, string]> = [
-    [1_000_000_000, "B"],
-    [1_000_000, "M"],
     [1_000, "K"],
+    [1_000_000, "M"],
+    [1_000_000_000, "B"],
+    [1_000_000_000_000, "T"],
   ]
-  for (const [size, suffix] of units) {
-    if (value >= size) return `${Number((value / size).toFixed(1))}${suffix}`
+  let index = -1
+  for (let candidate = 0; candidate < units.length; candidate++) {
+    if (value >= units[candidate]![0]) index = candidate
   }
-  return String(value)
+  if (index === -1) return String(value)
+  let scaled = Number((value / units[index]![0]).toFixed(1))
+  if (scaled >= 1_000 && index + 1 < units.length) {
+    index++
+    scaled = Number((value / units[index]![0]).toFixed(1))
+  }
+  return `${scaled}${units[index]![1]}`
 }
