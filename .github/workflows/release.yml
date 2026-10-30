@@ -14,6 +14,10 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    # Set before the first release: gh secret set NPM_TOKEN. Once the package exists and a trusted
+    # publisher is configured on npmjs.com, delete the secret and npm uses OIDC instead.
+    env:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -39,7 +43,7 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: git diff --exit-code -- dist
-      # The first version is published by hand, so a tag for it is allowed to go up afterwards.
+      # A tag for a version that is already on the registry is a no-op, so re-running a release is safe.
       - name: Check whether this version is already on the registry
         id: registry
         run: |
@@ -50,6 +54,11 @@ jobs:
           else
             echo "published=false" >> "$GITHUB_OUTPUT"
           fi
-      - name: Publish
-        if: steps.registry.outputs.published != 'true'
+      - name: Publish with the stored token
+        if: env.NPM_TOKEN != '' && steps.registry.outputs.published != 'true'
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ env.NPM_TOKEN }}
+      - name: Publish with trusted publishing
+        if: env.NPM_TOKEN == '' && steps.registry.outputs.published != 'true'
         run: npm publish --provenance --access public
