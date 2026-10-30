@@ -51,7 +51,7 @@ npm run dev        # vite build --watch，改 GUI 代码自动重载
 
 ## 安装
 
-从 npm 安装（发布后）：
+从 npm 安装：
 
 ```jsonc
 // ~/.config/opencode/opencode.jsonc
