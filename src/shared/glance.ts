@@ -141,13 +141,13 @@ export function createGlance(source: GlanceSource, options: GlanceOptions) {
   const hit = createMemo(() => cacheHit(totals()))
   const running = createMemo(() => source.running())
 
-  // The active step must be read live: its content changes on every token.
-  const active = createMemo(() => activeStep(source.messages()))
-  const estimated = createMemo(() => {
-    const step = active()
-    return step ? estimateStepTokens(step) : 0
+  // The active step must be read live: its content changes on every token. Reading the step and its
+  // content in one computation matters because the step object keeps its identity while it streams, so a
+  // memo that only depended on the step would stop tracking the text after the first delta.
+  const activity = createMemo(() => {
+    const step = activeStep(source.messages())
+    return stepActivity(step, step ? estimateStepTokens(step) : 0, now())
   })
-  const activity = createMemo(() => stepActivity(active(), estimated(), now()))
 
   // Smooth the character-based estimate so the number does not jump on every delta.
   createEffect(() => {

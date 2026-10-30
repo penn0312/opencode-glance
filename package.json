@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
   "name": "opencode-glance",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Glanceable session stats for OpenCode: turns, steps, throughput, tokens, cache hit, context usage, and live tool activity.",
   "type": "module",
   "license": "MIT",
