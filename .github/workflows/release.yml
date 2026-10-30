@@ -3,6 +3,9 @@ name: Release
 on:
   push:
     tags: ["v*"]
+  # After a failed publish (for example a missing secret) re-run the tag's workflow from the Actions tab,
+  # which is this dispatch entry, instead of deleting and re-pushing the tag.
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -18,9 +21,22 @@ jobs:
           node-version: 22
           registry-url: https://registry.npmjs.org
           cache: npm
+      - name: Check the tag matches the package version
+        if: github.event_name == 'push'
+        run: |
+          node --input-type=commonjs -e '
+            const version = require("./package.json").version
+            const tag = process.env.GITHUB_REF_NAME
+            if (tag !== `v${version}`) {
+              console.error(`tag ${tag} does not match package version v${version}`)
+              process.exit(1)
+            }
+          '
       - run: npm ci
       - run: npm run typecheck
+      - run: npm test
       - run: npm run build
+      - run: git diff --exit-code -- dist
       - run: npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
